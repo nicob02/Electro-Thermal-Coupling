@@ -12,7 +12,7 @@ out_ndim = 2
 
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name  
 
-mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=70)
+mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=65)
 
 graph = mesh.getGraphData().to(device)
 graph.pos.requires_grad_()
