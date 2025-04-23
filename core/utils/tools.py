@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import shutil
 import math
 from torch_geometric.data import Data
+import torch.autograd as autograd
 
 def RemoveDir(filepath):
     '''
@@ -52,6 +53,11 @@ def modelTrainer(config):
     best_loss  = np.inf
     func  = config.func_main
     opt   = config.optimizer
+    tol = 1e-6
+    x_coord = graph.pos[:, 0:1]               # shape [N,1]
+    is_left  = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
+    is_right = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
+    lateral_mask = (is_left | is_right).squeeze()   
     
     # 1) Build static node features once
     graph = func.graph_modify(graph)
@@ -61,8 +67,20 @@ def modelTrainer(config):
         raw = model(graph)                     # [N,2] raw outputs
         PV, PT = func.pde_residuals(graph, raw)  # both [N,1] 
 
-        loss = torch.mean(PV**2) + torch.mean(PT**2)
+        loss_int = torch.mean(PV**2) + torch.mean(PT**2)
 
+        # 3) Neumann BC on lateral walls
+        pos = graph.pos; pos.requires_grad_()
+        grad_u = torch.autograd.grad(
+            outputs=u, inputs=pos,
+            grad_outputs=torch.ones_like(u),
+            create_graph=True,
+        )[0]
+        du_dx     = grad_u[:, 0:1]
+        du_dx_lat = du_dx[lateral_mask]
+        loss_neu  = torch.norm(du_dx_lat)**2 / du_dx_lat.numel()
+    
+        loss = loss_int + loss_neu
         config.optimizer.zero_grad()
         loss.backward(retain_graph=True)
         config.optimizer.step()
