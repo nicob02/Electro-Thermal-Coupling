@@ -3,7 +3,7 @@ from core.models import msgPassing
 from core.geometry import ElectrodeMesh
 from torch.utils.tensorboard import SummaryWriter
 from core.utils.tools import parse_config, modelTrainer
-from functions import ElectroThermalFunc as Func
+from functions import CoupledElectroThermalFunc as Func
 import matplotlib.pyplot as plt
 
 device = torch.device(0)
@@ -18,8 +18,7 @@ sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
 kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
 
-func_main = CoupledElectroThermalFunc(sigma=sigma, k=kappa,
-                                 V_D=1.0, T_D=273.0)
+func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0)
 
 model = msgPassing(message_passing_num=3, node_input_size=out_ndim+2, edge_input_size=3, 
                    ndim=out_ndim, device=device, model_dir=ckptpath)    # Mess with MPN# to 2 or 3, +3 comes from source + BC
