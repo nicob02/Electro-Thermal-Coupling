@@ -7,8 +7,8 @@ from functions import CoupledElectroThermalFunc as Func
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-
-
+from FEM import run_fem 
+from torch_geometric.data import Data
 
 out_ndim = 2
 
@@ -52,7 +52,29 @@ setattr(test_config, 'func_main', func_main)
 
 print('************* model test starts! ***********************')
 V_pred, T_pred = modelTester(test_config)       # returns an NumPy array [N,2]
+# 2) Run the FEM solver
+coords_fem, V_vals_fem, T_vals_fem = run_fem()  
+# ensure ordering of coords matches GNN's graph.pos; if not, you'd need to reorder.
 
+# 3) Compute and print relative L2 errors
+err_V = compute_steady_error(V_pred, V_vals_fem)
+err_T = compute_steady_error(T_pred, T_vals_fem)
+print(f"Rel L2 error Voltage:     {err_V:.3e}")
+print(f"Rel L2 error Temperature: {err_T:.3e}")
+
+# 4) Plot side-by-side
+#    render_results, which expects six arguments:
+#    V_pred, T_pred, V_exact, T_exact, graph, filename
+
+# For consistency, coerce all to numpy 1D:
+V_pred = np.array(V_pred).reshape(-1)
+T_pred = np.array(T_pred).reshape(-1)
+V_vals = np.array(V_vals_fem).reshape(-1)
+T_vals = np.array(T_vals_fem).reshape(-1)
+
+graph_fem = Data(pos=torch.from_numpy(coords_fem.astype(np.float32)))
+
+render_results(V_pred, T_pred, V_vals, T_vals, graph_fem, filename="fem_vs_gnn.png")
 
 # ── 3) plot only the PREDICTIONS ─────────────────────────────────────────────
 
