@@ -7,10 +7,12 @@ from fenics import *
 import numpy as np
 
 def run_fem(density=65):
-    mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=density)
     
-    V_space = FunctionSpace(mesh, 'CG', 1)
-    T_space = FunctionSpace(mesh, 'CG', 1)
+    mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=density)
+    fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
+    
+    V_space = FunctionSpace(fenics_mesh, 'CG', 1)
+    T_space = FunctionSpace(fenics_mesh, 'CG', 1)
     
     # 2) Boundary markers
     tol = 1e-8
@@ -36,7 +38,7 @@ def run_fem(density=65):
     solve(a_V==L_V, V_sol, bcs_V)
     
     # 4) Compute Q = |∇V|^2
-    V_grad = project(grad(V_sol), VectorFunctionSpace(mesh,'CG',1))
+    V_grad = project(grad(V_sol), VectorFunctionSpace(fenics_mesh,'CG',1))
     Q = project(dot(V_grad, V_grad), V_space)    # scalar Q
     
     # 5) Temperature problem: -Δ T = Q,   T=273 on ALL boundaries
