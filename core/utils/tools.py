@@ -50,29 +50,19 @@ def modelTrainer(config):
     scheduler = torch.optim.lr_scheduler.StepLR(
         config.optimizer, step_size=config.lrstep, gamma=0.99)  
     best_loss  = np.inf
-    # 1) Build fixed node features once: [x, y, f]
-    x = graph.pos[:,0:1]
-    y = graph.pos[:,1:2]
-    f = (
-    2 * math.pi * torch.cos(math.pi * y) * torch.sin(math.pi * x)
-    + 2 * math.pi * torch.cos(math.pi * x) * torch.sin(math.pi * y)
-    + (x + y) * torch.sin(math.pi * x) * torch.sin(math.pi * y)
-    - 2 * (math.pi ** 2) * (x + y) * torch.sin(math.pi * x) * torch.sin(math.pi * y)
-    )
+    func  = config.func
+    opt   = config.optimizer
     
+    # 1) Build static node features once
+    graph = func.graph_modify(graph)
     
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
         
-        graph.x = torch.cat([graph.pos, f], dim=-1)  # shape [N,3]
-        u_raw = model(graph)  
+        raw = model(graph)                     # [N,2] raw outputs
+        PV, PT = func.pde_residuals(graph, raw)  # both [N,1] 
 
-        # 3) Enforce Dirichlet BC = 0 via ansatz (or hard clamp)
-        u = config.bc1(graph, u_raw)
+       loss = torch.mean(PV**2) + torch.mean(PT**2)
 
-        # 4) Compute PDE residual: -Δ u + u - f
-        res = config.pde(graph, values_this=u)       # uses laplacian_ad internally
-        loss = torch.norm(res)                       # L2 norm of residual
-    
         config.optimizer.zero_grad()
         loss.backward(retain_graph=True)
         config.optimizer.step()
@@ -90,80 +80,84 @@ def modelTester(config):
     """
     Single‐shot evaluation of the trained steady‐state GNN.
     Returns:
-      u_pred (numpy array [N,1]): Predicted solution at each mesh node.
+      V_pred, T_pred: NumPy arrays of shape [N,1]
     """
-    # 1) Move model and graph to the right device
-    model = config.model.to(config.device)
+    # 1) Put model & graph on the right device
+    model = config.model.to(config.device).eval()
     graph = config.graph.to(config.device)
 
-    # 2) Build the fixed node features [x, y, f] exactly as in training
-    x = graph.pos[:, 0:1]
-    y = graph.pos[:, 1:2]
-    f = (
-        2 * math.pi * torch.cos(math.pi * y) * torch.sin(math.pi * x)
-      + 2 * math.pi * torch.cos(math.pi * x) * torch.sin(math.pi * y)
-      + (x + y) * torch.sin(math.pi * x) * torch.sin(math.pi * y)
-      - 2 * (math.pi**2) * (x + y) * torch.sin(math.pi * x) * torch.sin(math.pi * y)
-    )
-    graph.x = torch.cat([x, y, f], dim=-1)
+    # 2) Build the static node features [x,y,σ,k]
+    graph = config.func.graph_modify(graph)
 
-    # 3) Forward pass + boundary enforcement
-    u_raw  = model(graph)               # shape [N,1]
-    u_pred = config.bc1(graph, u_raw)   # apply ansatz/hard clamp
+    # 3) Forward + hard‐BC ansatz
+    raw   = model(graph)  # [N,2] = [V_raw, T_raw]
+    V_pred = config.func._ansatz_V(graph, raw[:,0:1])
+    T_pred = config.func._ansatz_T(graph, raw[:,1:2])
 
-    return u_pred.cpu().numpy()
+    return V_pred.cpu().numpy(), T_pred.cpu().numpy()
 
 
-def compute_steady_error(u_pred, u_exact, config):
-    # 1) Convert predictions to NumPy
-    if isinstance(u_pred, torch.Tensor):
-        u_pred_np = u_pred.detach().cpu().numpy()
-    else:
-        u_pred_np = np.array(u_pred, copy=False)
-
-    # 2) Convert exact to NumPy
-    if isinstance(u_exact, torch.Tensor):
-        u_exact_np = u_exact.detach().cpu().numpy()
-    else:
-        u_exact_np = np.array(u_exact, copy=False)
-
-    # 3) Flatten both to 1D arrays
-    u_pred_flat  = u_pred_np.reshape(-1)
-    u_exact_flat = u_exact_np.reshape(-1)
-
-    # 4) Compute relative L2 norm
-    num   = np.linalg.norm(u_pred_flat - u_exact_flat)
-    denom = np.linalg.norm(u_exact_flat)
-    rel_l2 = num / (denom + 1e-16)  # small eps to avoid div0
-
-    return rel_l2
-
-def render_results(u_pred, u_exact, graph, filename="steady_results.png"):
+def compute_steady_error(pred, exact):
     """
-    Scatter‐plot Exact, Predicted, and Absolute Error on the mesh nodes.
+    Compute relative L2 error between pred and exact.
+    Both pred & exact can be Tensor or NumPy of shape [N,1] or [N,].
+    """
+    # to NumPy flat
+    if isinstance(pred, torch.Tensor):
+        p = pred.detach().cpu().numpy().reshape(-1)
+    else:
+        p = np.array(pred).reshape(-1)
+    if isinstance(exact, torch.Tensor):
+        e = exact.detach().cpu().numpy().reshape(-1)
+    else:
+        e = np.array(exact).reshape(-1)
+
+    num   = np.linalg.norm(p - e)
+    denom = np.linalg.norm(e) + 1e-16
+    return num/denom
+
+
+def render_results(V_pred, T_pred, V_exact, T_exact, graph,
+                   filename="steady_coupled.png"):
+    """
+    Plot Exact vs Predicted vs Absolute Error for both V and T.
+    Saves a 2×3 panel figure.
     """
     pos = graph.pos.cpu().numpy()
     x, y = pos[:,0], pos[:,1]
-    error = np.abs(u_exact - u_pred)
 
-    fig, axes = plt.subplots(1, 3, figsize=(18,5))
+    err_V = np.abs(V_exact - V_pred)
+    err_T = np.abs(T_exact - T_pred)
 
-    # 1) Exact
-    sc0 = axes[0].scatter(x, y, c=u_exact.flatten(), cmap='viridis', s=5)
-    axes[0].set_title("Exact Solution")
-    plt.colorbar(sc0, ax=axes[0], shrink=0.7)
+    fig, axes = plt.subplots(2,3, figsize=(18,12))
 
-    # 2) Predicted
-    sc1 = axes[1].scatter(x, y, c=u_pred.flatten(), cmap='viridis', s=5)
-    axes[1].set_title("GNN Prediction")
-    plt.colorbar(sc1, ax=axes[1], shrink=0.7)
+    # Row 0: Voltage
+    im0 = axes[0,0].scatter(x, y, c=V_exact.flatten(), s=5, cmap='viridis')
+    axes[0,0].set_title("Exact Voltage")
+    plt.colorbar(im0, ax=axes[0,0], shrink=0.7)
 
-    # 3) Absolute Error
-    sc2 = axes[2].scatter(x, y, c=error.flatten(), cmap='magma', s=5)
-    axes[2].set_title("Absolute Error")
-    plt.colorbar(sc2, ax=axes[2], shrink=0.7)
+    im1 = axes[0,1].scatter(x, y, c=V_pred.flatten(),  s=5, cmap='viridis')
+    axes[0,1].set_title("Predicted Voltage")
+    plt.colorbar(im1, ax=axes[0,1], shrink=0.7)
 
-    for ax in axes:
+    im2 = axes[0,2].scatter(x, y, c=err_V.flatten(),  s=5, cmap='magma')
+    axes[0,2].set_title("Voltage Absolute Error")
+    plt.colorbar(im2, ax=axes[0,2], shrink=0.7)
+
+    # Row 1: Temperature
+    im3 = axes[1,0].scatter(x, y, c=T_exact.flatten(), s=5, cmap='viridis')
+    axes[1,0].set_title("Exact Temperature")
+    plt.colorbar(im3, ax=axes[1,0], shrink=0.7)
+
+    im4 = axes[1,1].scatter(x, y, c=T_pred.flatten(),  s=5, cmap='viridis')
+    axes[1,1].set_title("Predicted Temperature")
+    plt.colorbar(im4, ax=axes[1,1], shrink=0.7)
+
+    im5 = axes[1,2].scatter(x, y, c=err_T.flatten(),  s=5, cmap='magma')
+    axes[1,2].set_title("Temperature Absolute Error")
+    plt.colorbar(im5, ax=axes[1,2], shrink=0.7)
+
+    for ax in axes.flatten():
         ax.set_xlabel("x"); ax.set_ylabel("y")
 
     plt.tight_layout()
