@@ -1,9 +1,7 @@
 
 import torch
-from core.pde import laplacian, grad
+import torch.autograd as autograd
 import numpy as np
-import math
-
 
 class CoupledElectroThermalFunc:
 
