@@ -34,7 +34,7 @@ def get_node_type(pos, radius_ratio=None):
 class ElectrodeMesh():
     
     node_type_ref = NodeType
-    def __init__(self, density=65, lb=(0, 0), ru=(1, 1)) -> None:
+    def __init__(self, density=65, lb=(-0.5, -0.5), ru=(0.5, 0.5)) -> None:
         
         self.transform = T.Compose([
             T.FaceToEdge(remove_faces=False), 
