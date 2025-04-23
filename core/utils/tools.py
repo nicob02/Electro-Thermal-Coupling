@@ -50,7 +50,7 @@ def modelTrainer(config):
     scheduler = torch.optim.lr_scheduler.StepLR(
         config.optimizer, step_size=config.lrstep, gamma=0.99)  
     best_loss  = np.inf
-    func  = config.func
+    func  = config.func_main
     opt   = config.optimizer
     
     # 1) Build static node features once
@@ -87,12 +87,12 @@ def modelTester(config):
     graph = config.graph.to(config.device)
 
     # 2) Build the static node features [x,y,σ,k]
-    graph = config.func.graph_modify(graph)
+    graph = config.func_main.graph_modify(graph)
 
     # 3) Forward + hard‐BC ansatz
     raw   = model(graph)  # [N,2] = [V_raw, T_raw]
-    V_pred = config.func._ansatz_V(graph, raw[:,0:1])
-    T_pred = config.func._ansatz_T(graph, raw[:,1:2])
+    V_pred = config.func_main._ansatz_V(graph, raw[:,0:1])
+    T_pred = config.func_main._ansatz_T(graph, raw[:,1:2])
 
     return V_pred.cpu().numpy(), T_pred.cpu().numpy()
 
