@@ -65,22 +65,8 @@ def modelTrainer(config):
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
         
         raw = model(graph)                     # [N,2] raw outputs
-        PV, PT = func.pde_residuals(graph, raw)  # both [N,1] 
+        loss = func.pde_residuals(graph, raw)  # both [N,1] 
 
-        loss_int = torch.mean(PV**2) + torch.mean(PT**2)
-
-        # 3) Neumann BC on lateral walls
-        pos = graph.pos; pos.requires_grad_()
-        grad_u = torch.autograd.grad(
-            outputs=u, inputs=pos,
-            grad_outputs=torch.ones_like(u),
-            create_graph=True,
-        )[0]
-        du_dx     = grad_u[:, 0:1]
-        du_dx_lat = du_dx[lateral_mask]
-        loss_neu  = torch.norm(du_dx_lat)**2 / du_dx_lat.numel()
-    
-        loss = loss_int + loss_neu
         config.optimizer.zero_grad()
         loss.backward(retain_graph=True)
         config.optimizer.step()
