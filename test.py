@@ -50,7 +50,7 @@ setattr(test_config, 'func_main', func_main)
 #-----------------------------------------
 
 print('************* model test starts! ***********************')
-V_pred, T_pred = modelTester(test_config) = modelTester(test_config)        # returns an NumPy array [N,2]
+V_pred, T_pred = modelTester(test_config)       # returns an NumPy array [N,2]
 
 
 # ── 3) plot only the PREDICTIONS ─────────────────────────────────────────────
