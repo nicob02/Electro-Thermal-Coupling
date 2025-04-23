@@ -9,21 +9,18 @@ import os
 
 
 
-delta_t = 1 # Mess around with this
-#poisson_params = 6.28318
-#poisson_params = 12.56637  #4pi, initial test case, change later.
-poisson_params = 25.13274  #8pi, initial test case, change later.
-#func_name = 'rfa'
-out_ndim = 1
+out_ndim = 2
 
 dens=65
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name    #FIGURE THIS OUT
 device = torch.device(0)
 
-func_main = Func(delta_t=delta_t, params=poisson_params)
+sigma = torch.ones(graph.num_nodes,1,device=device)
+kappa = torch.ones(graph.num_nodes,1,device=device)
 
-bc1 = func_main.boundary_condition
-ic = func_main.init_condition
+# 3) Physics‐helper
+func_main = CoupledElectroThermalFunc(sigma=sigma, k=kappa,
+                                 V_D=1.0, T_D=273.0)
 
 mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=65)
 graph = mesh.getGraphData()
