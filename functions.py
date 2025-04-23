@@ -24,21 +24,35 @@ class CoupledElectroThermalFunc:
         return graph
 
     def _ansatz_V(self, graph, Vraw):
-        x,y = graph.pos[:,0:1], graph.pos[:,1:2]
-        # distance-to-Dirichlet-V-boundary function D_V(x):
-        # here: top y=1→D=0, bottom y=0→D=0, interior>0
-        Dv = torch.tanh(np.pi*x)*torch.tanh(np.pi*(1-x)) \
-           * torch.tanh(np.pi*y)*torch.tanh(np.pi*(1-y))
-        # extension G_V(x): linear ramp from bottom(0) to top(V_D)
-        Gv = self.V_D * (y)  
-        return Gv + Dv*Vraw
+        """
+        Hard‐enforce V=0 on y=-0.5, V=1 on y=+0.5; Neumann on x=±0.5 is natural.
+        G_V(x,y)   = y + 0.5
+        D_V(x,y)   = 0.5^2 − y^2
+        û_V = G_V + D_V * Vraw
+        """
+        x = graph.pos[:,0:1]
+        y = graph.pos[:,1:2]
+
+        Gv = y + 0.5                   # at y=+0.5 → 1.0, at y=-0.5 → 0.0
+        Dv = 0.5**2 - y**2            # zero on the top/bottom, >0 interior
+
+        return Gv + Dv * Vraw
+
 
     def _ansatz_T(self, graph, Traw):
-        x,y = graph.pos[:,0:1], graph.pos[:,1:2]
-        Dt = torch.tanh(np.pi*x)*torch.tanh(np.pi*(1-x)) \
-           * torch.tanh(np.pi*y)*torch.tanh(np.pi*(1-y))
-        Gt = torch.full_like(y, self.T_D)  # T_D on all boundaries
-        return Gt + Dt*Traw
+        """
+        Hard‐enforce T=T_D on all boundaries via
+        G_T(x,y)   = T_D
+        D_T(x,y)   = (x^2 − 0.5^2)*(y^2 − 0.5^2)
+        û_T = G_T + D_T * Traw
+        """
+        x = graph.pos[:,0:1]
+        y = graph.pos[:,1:2]
+
+        Gt = torch.full_like(y, self.T_D)    
+        Dt = (x**2 - 0.5**2) * (y**2 - 0.5**2)  # zero on x=±0.5 or y=±0.5
+
+        return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
         pos = graph.pos
