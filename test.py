@@ -3,7 +3,7 @@ from core.utils.tools import parse_config, modelTester, RemoveDir
 from core.utils.tools import compute_steady_error, render_results
 from core.models import msgPassing
 from core.geometry import ElectrodeMesh
-from functions import ElectroThermalFunc as Func
+from functions import CoupledElectroThermalFunc as Func
 import os
 
 
@@ -19,8 +19,7 @@ sigma = torch.ones(graph.num_nodes,1,device=device)
 kappa = torch.ones(graph.num_nodes,1,device=device)
 
 # 3) Physics‐helper
-func_main = CoupledElectroThermalFunc(sigma=sigma, k=kappa,
-                                 V_D=1.0, T_D=273.0)
+func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0)
 
 mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=65)
 graph = mesh.getGraphData()
