@@ -1,4 +1,6 @@
 class CoupledElectroThermalFunc:
+
+    func_name = 'electro-thermal-coupling'
     def __init__(self, sigma, k, V_D=1.0, T_D=273.0):
         """
         sigma, k: tensors [N,1] giving per‐node conductivities
