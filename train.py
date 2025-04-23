@@ -12,7 +12,7 @@ out_ndim = 2
 
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name  
 
-mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=65)
+mesh = ElectrodeMesh(ru=(1, 1), lb=(0, 0), density=80)
 
 graph = mesh.getGraphData().to(device)
 graph.pos.requires_grad_()
@@ -77,7 +77,7 @@ setattr(train_config, 'graph_modify', func_main.graph_modify)
 setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
-setattr(train_config, 'epchoes', 2500)
+setattr(train_config, 'epchoes', 2000)
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
 setattr(train_config, 'ndim', out_ndim)
