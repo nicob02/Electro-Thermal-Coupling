@@ -36,15 +36,10 @@ test_steps = 20
 test_config = parse_config()
 
 #model = kwargs['model'] # Extracts the model's dictioanry with the weights and biases values
-setattr(test_config, 'poisson_params', poisson_params)
-setattr(test_config, 'delta_t', delta_t)
 setattr(test_config, 'device', device)   
-setattr(test_config, 'ic', ic)
-setattr(test_config, 'bc1', bc1)
 setattr(test_config, 'model', model)
 setattr(test_config, 'test_steps', test_steps)
 setattr(test_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref)
-#setattr(test_config, 'name', func_name)
 setattr(test_config, 'ndim', out_ndim)
 setattr(test_config, 'graph_modify', func_main.graph_modify)
 setattr(test_config, 'graph', graph)
