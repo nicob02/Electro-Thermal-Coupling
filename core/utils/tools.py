@@ -61,7 +61,7 @@ def modelTrainer(config):
         raw = model(graph)                     # [N,2] raw outputs
         PV, PT = func.pde_residuals(graph, raw)  # both [N,1] 
 
-       loss = torch.mean(PV**2) + torch.mean(PT**2)
+        loss = torch.mean(PV**2) + torch.mean(PT**2)
 
         config.optimizer.zero_grad()
         loss.backward(retain_graph=True)
