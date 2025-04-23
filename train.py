@@ -12,6 +12,11 @@ out_ndim = 2
 
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name  
 
+# 2) Per‐node σ, k
+#    (here constant =1, or piecewise define mesh.node_type, etc.)
+sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
+kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
+
 
 func_main = CoupledElectroThermalFunc(sigma=sigma, k=kappa,
                                  V_D=1.0, T_D=273.0)
