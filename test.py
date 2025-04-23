@@ -50,11 +50,8 @@ setattr(test_config, 'func_main', func_main)
 #-----------------------------------------
 
 print('************* model test starts! ***********************')
-pred = modelTester(test_config)        # returns an NumPy array [N,2]
+V_pred, T_pred = modelTester(test_config) = modelTester(test_config)        # returns an NumPy array [N,2]
 
-# split channels
-V_pred = pred[:, 0].reshape(-1,1)      # voltage
-T_pred = pred[:, 1].reshape(-1,1)      # temperature
 
 # ── 3) plot only the PREDICTIONS ─────────────────────────────────────────────
 
