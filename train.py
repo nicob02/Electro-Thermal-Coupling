@@ -8,19 +8,13 @@ import matplotlib.pyplot as plt
 
 device = torch.device(0)
 
-delta_t = 1 # Mess around with this
+out_ndim = 2
 
-
-out_ndim = 1
-#poisson_params = 6.28318  #2pi, initial test case, change later.
-#poisson_params = 12.56637  #4pi, initial test case, change later.
-poisson_params = 25.13274  #8pi, initial test case, change later.
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name  
 
-func_main = Func(delta_t=delta_t, params=poisson_params)
 
-ic = func_main.init_condition
-bc1 = func_main.boundary_condition
+func_main = CoupledElectroThermalFunc(sigma=sigma, k=kappa,
+                                 V_D=1.0, T_D=273.0)
 
 model = msgPassing(message_passing_num=3, node_input_size=out_ndim+2, edge_input_size=3, 
                    ndim=out_ndim, device=device, model_dir=ckptpath)    # Mess with MPN# to 2 or 3, +3 comes from source + BC
