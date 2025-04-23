@@ -5,7 +5,6 @@ from functions import CoupledElectroThermalFunc as Func
 import matplotlib.pyplot as plt
 from fenics import *
 import numpy as np
-import meshio
 
 def run_fem(density=65):
     mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=density)
@@ -54,19 +53,7 @@ def run_fem(density=65):
     coords = V_space.tabulate_dof_coordinates().reshape((-1,2))
     V_vals = V_sol.vector().get_local()
     T_vals = T_sol.vector().get_local()
-    
-    # 7) Save to file for Paraview / matplotlib
-    # convert FEniCS mesh → meshio
-    cells = [("triangle", np.array(mesh.cells(),dtype=int))]
-    meshio.write_points_cells(
-        "fem_coupled.vtk",
-        coords,
-        cells,
-        point_data={"V": V_vals, "T": T_vals}
-    )
-    print("FEM solve complete. Results in fem_coupled.vtk")
-    L_V = Constant(0)*v*dx
-    
+
     # Dirichlet on top y=0.5 → V=1, bottom y=-0.5 → V=0
     bc_top    = DirichletBC(V_space, Constant(1.0),   lambda x,onb: near(x[1],0.5,tol) and onb)
     bc_bottom = DirichletBC(V_space, Constant(0.0),   lambda x,onb: near(x[1],-0.5,tol) and onb)
