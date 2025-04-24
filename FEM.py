@@ -9,7 +9,7 @@ import numpy as np
 def run_fem(mesh=None):
     
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
-    coords      = mesh_data.pos.cpu().numpy()   # shape [N,2]
+    coords      = mesh.pos.cpu().numpy()   # shape [N,2]
 
     V_space = FunctionSpace(fenics_mesh, 'CG', 1)
     T_space = FunctionSpace(fenics_mesh, 'CG', 1)
