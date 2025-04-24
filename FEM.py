@@ -6,10 +6,9 @@ import matplotlib.pyplot as plt
 from fenics import *
 import numpy as np
 
-def run_fem(mesh=None):
+def run_fem(mesh=None, coords=None):
     
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
-    coords      = mesh.pos.cpu().numpy()   # shape [N,2]
 
     V_space = FunctionSpace(fenics_mesh, 'CG', 1)
     T_space = FunctionSpace(fenics_mesh, 'CG', 1)
