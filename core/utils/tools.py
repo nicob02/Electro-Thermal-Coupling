@@ -53,7 +53,7 @@ def modelTrainer(config):
     best_loss  = np.inf
     func  = config.func_main
     opt   = config.optimizer
-    tol = 1e-6
+    tol = 1e-4
     x_coord = graph.pos[:, 0:1]               # shape [N,1]
     is_left  = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
     is_right = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
