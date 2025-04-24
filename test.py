@@ -53,7 +53,7 @@ setattr(test_config, 'func_main', func_main)
 print('************* model test starts! ***********************')
 V_pred, T_pred = modelTester(test_config)       # returns an NumPy array [N,2]
 # 2) Run the FEM solver
-coords_fem, V_vals_fem, T_vals_fem = run_fem(mesh)  
+coords_fem, V_vals_fem, T_vals_fem = run_fem(mesh=mesh, coord=graph.pos.cpu().numpy())  
 # ensure ordering of coords matches GNN's graph.pos; if not, you'd need to reorder.
 
 # 3) Compute and print relative L2 errors
