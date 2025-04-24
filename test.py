@@ -72,9 +72,7 @@ T_pred = np.array(T_pred).reshape(-1)
 V_vals = np.array(V_vals_fem).reshape(-1)
 T_vals = np.array(T_vals_fem).reshape(-1)
 
-graph_fem = Data(pos=torch.from_numpy(coords_fem.astype(np.float32)))
-
-render_results(V_pred, T_pred, V_vals, T_vals, graph_fem, filename="fem_vs_gnn.png")
+render_results(V_pred, T_pred, V_vals, T_vals, graph, filename="fem_vs_gnn.png")
 
 # ── 3) plot only the PREDICTIONS ─────────────────────────────────────────────
 
