@@ -9,7 +9,8 @@ import numpy as np
 def run_fem(mesh=None):
     
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
-    
+    coords      = mesh_data.pos.cpu().numpy()   # shape [N,2]
+
     V_space = FunctionSpace(fenics_mesh, 'CG', 1)
     T_space = FunctionSpace(fenics_mesh, 'CG', 1)
     
@@ -49,14 +50,15 @@ def run_fem(mesh=None):
     bc_T = DirichletBC(T_space, Constant(273.0), 'on_boundary')
     T_sol = Function(T_space)
     solve(a_T==L_T, T_sol, [bc_T])
-    
-    # 6) Extract nodal values for comparison
-    coords = V_space.tabulate_dof_coordinates().reshape((-1,2))
-    V_vals = V_sol.vector().get_local()
-    T_vals = T_sol.vector().get_local()
 
-    # Dirichlet on top y=0.5 → V=1, bottom y=-0.5 → V=0
-    bc_top    = DirichletBC(V_space, Constant(1.0),   lambda x,onb: near(x[1],0.5,tol) and onb)
-    bc_bottom = DirichletBC(V_space, Constant(0.0),   lambda x,onb: near(x[1],-0.5,tol) and onb)
+    # 6) **Pointwise evaluation** at the *same* coords as graph.pos:
+    #    We loop over the N GNN nodes (could also vectorize),
+    #    but N≈6k is fine.
+    VV = np.empty((coords.shape[0],), dtype=np.float64)
+    TT = np.empty((coords.shape[0],), dtype=np.float64)
+    for i, (x, y) in enumerate(coords):
+        VV[i] = V_sol(Point(x, y))
+        TT[i] = T_sol(Point(x, y))
+
+    return coords, VV, TT
     
-    return coords, V_vals, T_vals
