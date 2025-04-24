@@ -10,8 +10,8 @@ def run_fem(mesh=None, coords=None):
     
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
 
-    V_space = FunctionSpace(fenics_mesh, 'CG', 1)
-    T_space = FunctionSpace(fenics_mesh, 'CG', 1)
+    V_space = FunctionSpace(fenics_mesh, 'CG', 2)
+    T_space = FunctionSpace(fenics_mesh, 'CG', 2)
     
     # 2) Boundary markers
     tol = 1e-8
@@ -37,7 +37,7 @@ def run_fem(mesh=None, coords=None):
     solve(a_V==L_V, V_sol, bcs_V)
     
     # 4) Compute Q = |∇V|^2
-    V_grad = project(grad(V_sol), VectorFunctionSpace(fenics_mesh,'CG',1))
+    V_grad = project(grad(V_sol), VectorFunctionSpace(fenics_mesh,'CG',2))
     Q = project(dot(V_grad, V_grad), V_space)    # scalar Q
     
     # 5) Temperature problem: -Δ T = Q,   T=273 on ALL boundaries
