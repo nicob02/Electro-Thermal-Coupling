@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 from fenics import *
 import numpy as np
 
-def run_fem(density=65):
+def run_fem(mesh=None):
     
-    mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=density)
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
     
     V_space = FunctionSpace(fenics_mesh, 'CG', 1)
