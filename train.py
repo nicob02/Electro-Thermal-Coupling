@@ -19,7 +19,7 @@ graph.pos.requires_grad_()
 
 # 2) Per‐node σ, k
 #    (here constant =1, or piecewise define mesh.node_type, etc.)
-sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
+sigma = torch.ones(graph.num_nodes,5,device=device) * 1.0
 kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
 func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0)
