@@ -6,13 +6,27 @@ import matplotlib.pyplot as plt
 from fenics import *
 import numpy as np
 
-def run_fem(mesh=None, coords=None):
+def run_fem(mesh=None, coords=None, sigma_vals=None, k_vals=None):
     
     fenics_mesh = mesh.mesh      # pull out the real dolfin.Mesh
 
     V_space = FunctionSpace(fenics_mesh, 'CG', 2)
     T_space = FunctionSpace(fenics_mesh, 'CG', 2)
     
+    dof_coords = V_space.tabulate_dof_coordinates().reshape(-1,2)
+    sigma_arr = np.empty((dof_coords.shape[0],), dtype=np.float64)
+    k_arr     = np.empty_like(sigma_arr)
+    # 2) for each DoF, find nearest graph node and copy value
+    for i, xy in enumerate(dof_coords):
+        idx = np.argmin(np.sum((coords - xy)**2, axis=1))
+        sigma_arr[i] = sigma_vals[idx]
+        k_arr[i]     = k_vals[idx]
+    # 3) pack into FEniCS Functions
+    sigma_fun = Function(V_space)
+    sigma_fun.vector()[:] = sigma_arr
+    k_fun = Function(T_space)
+    k_fun.vector()[:] = k_arr
+
     # 2) Boundary markers
     tol = 1e-8
     def top_bottom(x, on_bnd):
@@ -24,7 +38,7 @@ def run_fem(mesh=None, coords=None):
     # 3) Voltage problem: -Δ V = 0
     V = TrialFunction(V_space)
     v = TestFunction(V_space)
-    a_V = dot(grad(V), grad(v))*dx
+    a_V = dot(sigma_fun*grad(V), grad(v))*dx
     L_V = Constant(0)*v*dx
     
     # Dirichlet on top y=0.5 → V=1, bottom y=-0.5 → V=0
@@ -38,12 +52,11 @@ def run_fem(mesh=None, coords=None):
     
     # 4) Compute Q = |∇V|^2
     V_grad = project(grad(V_sol), VectorFunctionSpace(fenics_mesh,'CG',2))
-    Q = project(dot(V_grad, V_grad), V_space)    # scalar Q
-    
+    Q = project(sigma_fun * dot(V_grad, V_grad), V_space)    # Joule heating source
     # 5) Temperature problem: -Δ T = Q,   T=273 on ALL boundaries
     T = TrialFunction(T_space)
     t = TestFunction(T_space)
-    a_T = dot(grad(T), grad(t))*dx
+    a_T = dot(k_fun*grad(T), grad(t))*dx
     L_T = Q*t*dx
     
     bc_T = DirichletBC(T_space, Constant(273.0), 'on_boundary')
