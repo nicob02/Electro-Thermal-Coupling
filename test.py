@@ -21,8 +21,8 @@ mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=65)
 graph = mesh.getGraphData()
 
 
-sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
-kappa = torch.ones(graph.num_nodes,1,device=device) * 5.0
+sigma = torch.ones(graph.num_nodes,1,device=device) * 5.0
+kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
 # 3) Physics‐helper
 func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0)
