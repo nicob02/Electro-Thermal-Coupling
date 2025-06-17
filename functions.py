@@ -50,8 +50,8 @@ class CoupledElectroThermalFunc:
         y = graph.pos[:,1:2]
 
         Gt = torch.full_like(y, self.T_D)    
-        Dt = (x**2 - 0.5**2) * (y**2 - 0.5**2)  # zero on x=±0.5 or y=±0.5
-
+        Dt_raw = (x**2 - 0.5**2) * (y**2 - 0.5**2)
+        Dt = Dt_raw / (0.5**2 * 0.5**2)    # now max(Dt)=1 at (0,0)
         return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
