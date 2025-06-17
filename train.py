@@ -19,7 +19,7 @@ graph.pos.requires_grad_()
 
 # 2) Per‐node σ, k
 #    (here constant =1, or piecewise define mesh.node_type, etc.)
-sigma = torch.ones(graph.num_nodes,1,device=device) * 10.0
+sigma = torch.ones(graph.num_nodes,1,device=device) * 5.0
 kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
 func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0)
@@ -77,7 +77,7 @@ setattr(train_config, 'graph_modify', func_main.graph_modify)
 setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
-setattr(train_config, 'epchoes', 9000)
+setattr(train_config, 'epchoes', 6000)
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
 setattr(train_config, 'ndim', out_ndim)
