@@ -98,8 +98,21 @@ class CoupledElectroThermalFunc:
         # --- Thermal PDE ---
         gradT = self._gradient(T, graph)
         k     = self.k
-        fluxT = k * gradT
-        divT  = self._divergence(fluxT, graph)
-        PT    = -divT - Q                                 # = 0
+        #fluxT = k * gradT
+        #divT  = self._divergence(fluxT, graph)
+        #PT    = -divT - Q                                 # = 0
+
+        lap_Tx = autograd.grad(
+            gradT[:,0].sum(), graph.pos,
+            create_graph=True
+        )[0][:,0]
+        lap_Ty = autograd.grad(
+            gradT[:,1].sum(), graph.pos,
+            create_graph=True
+        )[0][:,1]
+        lapT   = (lap_Tx + lap_Ty).unsqueeze(-1)  # [N,1]
+    
+        k = self.k                              # [N,1]
+        PT = - k * lapT - Q                     # thermal residual
         
         return PV, PT, gradV 
