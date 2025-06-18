@@ -67,7 +67,7 @@ def modelTrainer(config):
         raw = model(graph)                     # [N,2] raw outputs
         PV, PT, grad_V = func.pde_residuals(graph, raw)  # both [N,1] 
         
-        loss_int = torch.mean(PV**2) + 1000*torch.mean(PT**2)
+        loss_int = torch.mean(PV**2) + 100*torch.mean(PT**2)
         du_dx     = grad_V[:, 0:1]        # partial derivative of voltage with respect to normal(x-direction)
         du_dx_lat = du_dx[lateral_mask]
         loss_neu  = torch.norm(du_dx_lat)**2 / du_dx_lat.numel()
