@@ -63,7 +63,15 @@ def modelTrainer(config):
     graph = func.graph_modify(graph)
     
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
-        
+
+               # --- at epoch 4001 switch sigma to 4.0 ---
+        if epoch == config.change_sigma_epoch + 1:
+            new_sigma = torch.ones(graph.num_nodes,1,device=graph.pos.device) * 4.0
+            func.sigma = new_sigma
+            # rebuild node features to include the new sigma
+            graph = func.graph_modify(graph)
+            print(f"→ [Epoch {epoch}] switched σ from 1 to 4")
+            
         raw = model(graph)                     # [N,2] raw outputs
         PV, PT, grad_V = func.pde_residuals(graph, raw)  # both [N,1] 
         
