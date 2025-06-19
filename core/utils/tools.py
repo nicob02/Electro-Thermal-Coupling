@@ -67,7 +67,7 @@ def modelTrainer(config):
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
 
         t = min(epoch, ramp_steps)
-        sigma_val = 1.0 + 4.0 * (t / ramp_steps)
+        sigma_val = 1.0 + 3.0 * (t / ramp_steps)
         func.sigma = torch.ones(graph.num_nodes,1,
                                 device=graph.pos.device) * sigma_val
         # rebuild node features so graph.x picks up new σ
