@@ -66,7 +66,7 @@ def modelTrainer(config):
 
                # --- at epoch 4001 switch sigma to 4.0 ---
         if epoch == config.change_sigma_epoch + 1:
-            new_sigma = torch.ones(graph.num_nodes,1,device=graph.pos.device) * 4.0
+            new_sigma = torch.ones(graph.num_nodes,1,device=graph.pos.device) * 3.0
             func.sigma = new_sigma
             # rebuild node features to include the new sigma
             graph = func.graph_modify(graph)
