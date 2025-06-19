@@ -58,19 +58,20 @@ def modelTrainer(config):
     is_left  = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
     is_right = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
     lateral_mask = (is_left | is_right).squeeze()   
-    
+    ramp_steps = config.change_sigma_epoch 
+    lr_drop_epoch = ramp_steps + 1
+    lr_drop_factor = 0.1
     # 1) Build static node features once
     graph = func.graph_modify(graph)
     
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
 
-               # --- at epoch 4001 switch sigma to 4.0 ---
-        if epoch == config.change_sigma_epoch + 1:
-            new_sigma = torch.ones(graph.num_nodes,1,device=graph.pos.device) * 3.0
-            func.sigma = new_sigma
-            # rebuild node features to include the new sigma
-            graph = func.graph_modify(graph)
-            print(f"→ [Epoch {epoch}] switched σ from 1 to 4")
+        t = min(epoch, ramp_steps)
+        sigma_val = 1.0 + 4.0 * (t / ramp_steps)
+        func.sigma = torch.ones(graph.num_nodes,1,
+                                device=graph.pos.device) * sigma_val
+        # rebuild node features so graph.x picks up new σ
+        graph = func.graph_modify(graph)
             
         raw = model(graph)                     # [N,2] raw outputs
         PV, PT, grad_V = func.pde_residuals(graph, raw)  # both [N,1] 
@@ -85,6 +86,13 @@ def modelTrainer(config):
         loss.backward(retain_graph=True)
         config.optimizer.step()
         scheduler.step()
+
+         # 5) at end of ramp, drop LR by 10× once
+        if epoch == lr_drop_epoch:
+            for pg in opt.param_groups:
+                pg['lr'] *= lr_drop_factor
+            print(f"→ [Epoch {epoch}] σ reached {sigma_val:.3f}; "
+                  f"dropped LR to {opt.param_groups[0]['lr']:.1e}")
         
         if epoch % 500 == 0:
             print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
