@@ -81,12 +81,13 @@ class CoupledElectroThermalFunc:
         raw: [N,2] = [V̂_raw, T̂_raw]
         Returns PV, PT each [N,1].
         """
+        gradV = self._gradient(V, graph)                 # [N,2]
         # apply hard‐BC ansatz:
         V = self._ansatz_V(graph, raw[:,0:1])
         T = self._ansatz_T(graph, raw[:,1:2])
 
         # --- Electro PDE ---
-        gradV = self._gradient(V, graph)                 # [N,2]
+        #gradV = self._gradient(V, graph)                 # [N,2]
         σ     = self.sigma                               # [N,1]
         fluxV = σ * gradV                                # broadcast→[N,2]
         divV  = self._divergence(fluxV, graph)           # [N,1]
