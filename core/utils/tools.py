@@ -65,12 +65,13 @@ def modelTrainer(config):
     graph = func.graph_modify(graph)
     
     for epoch in range(1, config.epchoes + 1):  # Creates different ic and solves the problem, does this epoch # of times
-
+        '''
         t = min(epoch, ramp_steps)
         sigma_val = 1.0 + 3.0 * (t / ramp_steps)
         func.sigma = torch.ones(graph.num_nodes,1,
                                 device=graph.pos.device) * sigma_val
-        # rebuild node features so graph.x picks up new σ
+         rebuild node features so graph.x picks up new σ
+        '''
         graph = func.graph_modify(graph)
             
         raw = model(graph)                     # [N,2] raw outputs
@@ -86,14 +87,14 @@ def modelTrainer(config):
         loss.backward(retain_graph=True)
         config.optimizer.step()
         scheduler.step()
-
+        '''
          # 5) at end of ramp, drop LR by 10× once
         if epoch == lr_drop_epoch:
             for pg in opt.param_groups:
                 pg['lr'] *= lr_drop_factor
             print(f"→ [Epoch {epoch}] σ reached {sigma_val:.3f}; "
                   f"dropped LR to {opt.param_groups[0]['lr']:.1e}")
-        
+        '''
         if epoch % 500 == 0:
             print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
             
