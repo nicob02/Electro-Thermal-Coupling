@@ -12,7 +12,7 @@ out_ndim = 2
 
 ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name  
 
-mesh = ElectrodeMesh(ru=(0.5, 0.5), lb=(-0.5, -0.5), density=65)
+mesh = ElectrodeMesh(ru=(1, 1), lb=(-1, -1), density=65)
 
 graph = mesh.getGraphData().to(device)
 graph.pos.requires_grad_()
@@ -22,7 +22,7 @@ graph.pos.requires_grad_()
 sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
 kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
-func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0,lb=(-0.5, -0.5), ru=(0.5, 0.5))
+func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0,lb=(-1, -1), ru=(1, 1))
 
 model = msgPassing(message_passing_num=3, node_input_size=out_ndim+2, edge_input_size=3, 
                    ndim=out_ndim, device=device, model_dir=ckptpath)    # Mess with MPN# to 2 or 3, +3 comes from source + BC
@@ -78,7 +78,7 @@ setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
 setattr(train_config, 'epchoes', 6000)
-setattr(train_config, 'change_sigma_epoch', 9)
+setattr(train_config, 'change_sigma_epoch', 5900)
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
 setattr(train_config, 'ndim', out_ndim)
