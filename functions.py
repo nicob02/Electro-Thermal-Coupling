@@ -42,11 +42,11 @@ class CoupledElectroThermalFunc:
         
         lb_x, lb_y = self.lb[0,0], self.lb[0,1]
         ru_x, ru_y = self.ru[0,0], self.ru[0,1]
-
+        η = (y - lb_y)/(ru_y - lb_y) 
         # linear “background” from bottom→top
-        Gv = (y - lb_y)/(ru_y - lb_y) 
+        Gv = η 
         # vanishes at y=lb_y or y=ru_y
-        Dv = (y - lb_y)*(ru_y - y)
+        Dv = (y - lb_y)**2 * (η*(1-η))
         return Gv + Dv * Vraw
 
 
@@ -62,11 +62,12 @@ class CoupledElectroThermalFunc:
 
         lb_x, lb_y = self.lb[0,0], self.lb[0,1]
         ru_x, ru_y = self.ru[0,0], self.ru[0,1]
-
+        ξ = 2*(x - lb_x)/(ru_x-lb_x) - 1
+        η = 2*(y - lb_y)/(ru_y-lb_y) - 1
         # constant background
         Gt = torch.full_like(y, self.T_D)
         # vanishes on any boundary face
-        Dt = (x - lb_x)*(ru_x - x) * (y - lb_y)*(ru_y - y)
+        Dt = (1 - ξ**2)*(1 - η**2) * ((rx-lx)/2)*((ry-ly)/2)
         return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
