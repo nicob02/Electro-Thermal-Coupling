@@ -59,8 +59,7 @@ class CoupledElectroThermalFunc:
         """
         x = graph.pos[:,0:1]
         y = graph.pos[:,1:2]
-`      #Gt = torch.full_like(y, self.T_D)    
-       #Dt = (x**2 - 0.5**2) * (y**2 - 0.5**2)
+
         lb_x, lb_y = self.lb[0,0], self.lb[0,1]
         ru_x, ru_y = self.ru[0,0], self.ru[0,1]
 
