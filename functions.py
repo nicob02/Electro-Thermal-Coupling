@@ -6,7 +6,7 @@ import numpy as np
 class CoupledElectroThermalFunc:
 
     func_name = 'electro-thermal-coupling'
-    def __init__(self, sigma, k, V_D=1.0, T_D=273.0):
+    def __init__(self, sigma, k, V_D=1.0, T_D=273.0, lb=(-0.5, -0.5), ru=(0.5, 0.5)):
         """
         sigma, k: tensors [N,1] giving per‐node conductivities
         V_D(x): Dirichlet voltage on V‐boundary (could be func of x)
@@ -16,6 +16,10 @@ class CoupledElectroThermalFunc:
         self.k     = k
         self.V_D   = V_D
         self.T_D   = T_D
+        # store as tensors for broadcasting
+        self.lb = torch.tensor(lb, device=sigma.device).view(1,2)
+        self.ru = torch.tensor(ru, device=sigma.device).view(1,2)
+
 
     def graph_modify(self, graph):
         # Build node features once: [x, y, sigma, k]
@@ -33,9 +37,16 @@ class CoupledElectroThermalFunc:
         x = graph.pos[:,0:1]
         y = graph.pos[:,1:2]
 
-        Gv = y + 0.5                   # at y=+0.5 → 1.0, at y=-0.5 → 0.0
-        Dv = 0.5**2 - y**2            # zero on the top/bottom, >0 interior
+        #Gv = y + 0.5                  # at y=+0.5 → 1.0, at y=-0.5 → 0.0
+        #Dv = 0.5**2 - y**2            # zero on the top/bottom, >0 interior
+        
+        lb_x, lb_y = self.lb[0,0], self.lb[0,1]
+        ru_x, ru_y = self.ru[0,0], self.ru[0,1]
 
+        # linear “background” from bottom→top
+        Gv = (y - lb_y)/(ru_y - lb_y) 
+        # vanishes at y=lb_y or y=ru_y
+        Dv = (y - lb_y)*(ru_y - y)
         return Gv + Dv * Vraw
 
 
@@ -48,10 +59,15 @@ class CoupledElectroThermalFunc:
         """
         x = graph.pos[:,0:1]
         y = graph.pos[:,1:2]
+`     #  Gt = torch.full_like(y, self.T_D)    
+      #  Dt = (x**2 - 0.5**2) * (y**2 - 0.5**2)
+        lb_x, lb_y = self.lb[0,0], self.lb[0,1]
+        ru_x, ru_y = self.ru[0,0], self.ru[0,1]
 
-        Gt = torch.full_like(y, self.T_D)    
-        Dt = (x**2 - 0.5**2) * (y**2 - 0.5**2)
-    
+        # constant background
+        Gt = torch.full_like(y, self.T_D)
+        # vanishes on any boundary face
+        Dt = (x - lb_x)*(ru_x - x) * (y - lb_y)*(ru_y - y)
         return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
