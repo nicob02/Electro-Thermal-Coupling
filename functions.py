@@ -27,14 +27,14 @@ class CoupledElectroThermalFunc:
         graph.x = torch.cat([pos, self.sigma, self.k], dim=-1)
         return graph
 
-      def _ansatz_V(self, graph, Vraw):
+    def _ansatz_V(self, graph, Vraw):
         x = graph.pos[:,0:1]; y = graph.pos[:,1:2]
         # flatten lb/ru into length-2
         lb = self.lb.view(-1)
         ru = self.ru.view(-1)
         lb_x, lb_y = float(lb[0]), float(lb[1])
         ru_x, ru_y = float(ru[0]), float(ru[1])
-
+    
         # normalize y into [0,1]
         η = (y - lb_y) / (ru_y - lb_y)
         Gv = η                        # → 0 at bottom, 1 at top
