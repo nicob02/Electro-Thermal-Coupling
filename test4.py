@@ -58,8 +58,8 @@ coords_fem, V_vals_fem, T_vals_fem = run_fem(
     coords=graph.pos.cpu().numpy(),
     sigma_vals = sigma.cpu().numpy().flatten(),
     k_vals     = kappa.cpu().numpy().flatten(),
-    lb         = (-2.0, -2.0),   # example for testing on [-1,1]^2
-    ru         = ( 2.0,  2.0),
+    lb         = (-4.0, -4.0),   # example for testing on [-1,1]^2
+    ru         = ( 4.0,  4.0),
     V_D        = 1.0,            # your Dirichlet voltage top face
     T_D        = 273.0           # your Dirichlet temperature on all faces
 )
