@@ -17,7 +17,7 @@ ckptpath = 'checkpoint/simulator_%s.pth' % Func.func_name    #FIGURE THIS OUT
 device = torch.device(0)
 
 
-mesh = ElectrodeMesh(ru=(2, 2), lb=(-2, -2), density=65)
+mesh = ElectrodeMesh(ru=(4, 4), lb=(-4, -4), density=65)
 graph = mesh.getGraphData()
 
 
@@ -25,7 +25,7 @@ sigma = torch.ones(graph.num_nodes,1,device=device) * 1.0
 kappa = torch.ones(graph.num_nodes,1,device=device) * 1.0
 
 # 3) Physics‐helper
-func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0, lb=(-2, -2), ru=(2, 2))
+func_main = Func(sigma=sigma, k=kappa, V_D=1.0, T_D=273.0, lb=(-4, -4), ru=(4, 4))
 
 model = msgPassing(message_passing_num=3, node_input_size=out_ndim+2, 
                    edge_input_size=3, ndim=out_ndim, device=device, model_dir=ckptpath)
