@@ -78,7 +78,12 @@ setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
 setattr(train_config, 'epchoes', 4000)
-setattr(train_config, 'change_sigma_epoch', 10)
+# **when** to switch domain:
+setattr(train_config, 'change_domain_epoch', 10)
+# **to what** new domain
+setattr(train_config, 'new_lb', (-1.0, -1.0))
+setattr(train_config, 'new_ru', ( 1.0,  1.0))
+
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
 setattr(train_config, 'ndim', out_ndim)
