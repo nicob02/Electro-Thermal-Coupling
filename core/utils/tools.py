@@ -82,7 +82,7 @@ def modelTrainer(config):
         du_dx_lat = du_dx[lateral_mask]
         loss_neu  = torch.norm(du_dx_lat)**2 / du_dx_lat.numel()
 
-        loss = loss_int + 1500*loss_neu
+        loss = loss_int + 2000*loss_neu
         config.optimizer.zero_grad()
         loss.backward(retain_graph=True)
         config.optimizer.step()
