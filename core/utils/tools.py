@@ -87,14 +87,13 @@ def modelTrainer(config):
         loss.backward(retain_graph=True)
         config.optimizer.step()
         scheduler.step()
-        '''
+
          # 5) at end of ramp, drop LR by 10× once
         if epoch == lr_drop_epoch:
             for pg in opt.param_groups:
                 pg['lr'] *= lr_drop_factor
             print(f"→ [Epoch {epoch}] σ reached {sigma_val:.3f}; "
                   f"dropped LR to {opt.param_groups[0]['lr']:.1e}")
-        '''
         if epoch % 500 == 0:
             print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
             
