@@ -43,7 +43,7 @@ def parse_config(file='config.json'):
             configs[k] = config
     return configs[k]
 
-
+'''
 def modelTrainer(config):
     
     model = config.model
@@ -101,7 +101,73 @@ def modelTrainer(config):
     model.save_model(config.optimizer)
     print('model saved at loss: %.4e' % loss)    
     print("Training completed!")
-        
+'''
+
+def modelTrainer(config):
+    model   = config.model
+    graph   = config.graph
+    optimizer = config.optimizer
+    scheduler = torch.optim.lr_scheduler.StepLR(
+        optimizer, step_size=config.lrstep, gamma=0.99
+    )
+
+    func    = config.func_main
+    best_loss = np.inf
+    tol     = 1e-4
+
+    ramp_epoch = config.change_sigma_epoch
+
+    # 1) initial feature build
+    graph = func.graph_modify(graph)
+
+    for epoch in range(1, config.epchoes + 1):
+        # ---------- domain switch block ----------
+        if epoch == ramp_epoch + 1:
+            # 1) rescale coordinates from [-0.5,0.5]→[-1,1]
+            graph.pos.data *= 2.0
+
+            # 2) update func.lb / func.ru
+            func.lb = torch.tensor((-1.0, -1.0), device=graph.pos.device)
+            func.ru = torch.tensor((+1.0, +1.0), device=graph.pos.device)
+
+            print(f"→ [Epoch {epoch:4d}] Domain switched to [-1,1]^2")
+
+        # 2) rebuild boundary mask each epoch (since pos changed)
+        x_coord = graph.pos[:, 0:1]
+        lb_x, lb_y = func.lb
+        ru_x, ru_y = func.ru
+
+        is_left   = torch.isclose(x_coord, lb_x, atol=tol)
+        is_right  = torch.isclose(x_coord, ru_x, atol=tol)
+        lateral_mask = (is_left | is_right).squeeze()
+
+        # 3) rebuild node features
+        graph = func.graph_modify(graph)
+
+        # 4) forward + residual
+        raw = model(graph)
+        PV, PT, grad_V = func.pde_residuals(graph, raw)
+
+        # 5) loss
+        loss_int = torch.mean(PV**2) + 10 * torch.mean(PT**2)
+        du_dx    = grad_V[:, 0:1]
+        du_dx_lat= du_dx[lateral_mask]
+        loss_neu = torch.norm(du_dx_lat)**2 / du_dx_lat.numel()
+        loss     = loss_int + 2000 * loss_neu
+
+        # 6) backward
+        optimizer.zero_grad()
+        loss.backward(retain_graph=True)
+        optimizer.step()
+        scheduler.step()
+
+        if epoch % 500 == 0:
+            print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
+
+    model.save_model(optimizer)
+    print(f"model saved at loss: {loss.item():.4e}")
+    print("Training completed!")
+
 @torch.no_grad()
 def modelTester(config):
     """
