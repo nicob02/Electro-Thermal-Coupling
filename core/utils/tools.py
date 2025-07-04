@@ -112,45 +112,47 @@ def modelTrainer(config):
     )
 
     ramp_epoch = config.change_domain_epoch
+    step_size  = config.domain_step
 
-    # helper: unpack lb/ru into four floats
+    # unpack helper for lb/ru
     def _unpack(lb_tensor, ru_tensor):
-        # ensure 1-D length-2
-        lb = lb_tensor.detach()
-        ru = ru_tensor.detach()
-        if lb.dim() > 1: lb = lb.view(-1)
-        if ru.dim() > 1: ru = ru.view(-1)
+        lb = lb_tensor.detach().view(-1)
+        ru = ru_tensor.detach().view(-1)
         return float(lb[0]), float(lb[1]), float(ru[0]), float(ru[1])
 
-    # initial unpack
-    lb_x, lb_y, ru_x, ru_y = _unpack(func.lb, func.ru)
+    # store initial and final lb/ru as 1-D tensors
+    init_lb = torch.tensor(func.lb, device=graph.pos.device).view(-1)
+    init_ru = torch.tensor(func.ru, device=graph.pos.device).view(-1)
+    final_lb = torch.tensor(config.new_lb, device=graph.pos.device).view(-1)
+    final_ru = torch.tensor(config.new_ru, device=graph.pos.device).view(-1)
 
-    tol = 1e-4
-    x_coord = graph.pos[:,0:1]
-    is_left  = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
-    is_right = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
-    lateral_mask = (is_left | is_right).squeeze()
-
-    # build features once
+    # build features once (uses initial domain)
     graph = func.graph_modify(graph)
 
-    for epoch in range(1, config.epchoes+1):
+    # prepare Neumann mask (assumes x in [0,1] after normalization inside func if needed)
+    tol = 1e-4
+    x_coord   = graph.pos[:,0:1]
+    is_left   = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
+    is_right  = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
+    lateral_mask = (is_left | is_right).squeeze()
 
-        #  → switch domain at the right epoch
-        if epoch == ramp_epoch + 1:
-            new_lb = config.new_lb
-            new_ru = config.new_ru
-            func.lb = torch.tensor(new_lb, device=graph.pos.device)
-            func.ru = torch.tensor(new_ru, device=graph.pos.device)
-            lb_x, lb_y, ru_x, ru_y = _unpack(func.lb, func.ru)
-            print(f"→ [Epoch {epoch:4d}] Domain switched to "
-                  f"[{lb_x:.1f},{ru_x:.1f}]×[{lb_y:.1f},{ru_y:.1f}]")
+    for epoch in range(1, config.epchoes + 1):
+        # every `step_size` epochs (and while <= ramp_epoch), update domain
+        if epoch % step_size == 0 and epoch <= ramp_epoch:
+            α = epoch / ramp_epoch
+            # linear interpolation
+            new_lb = init_lb + (final_lb - init_lb) * α
+            new_ru = init_ru + (final_ru - init_ru) * α
+            func.lb = new_lb.clone()
+            func.ru = new_ru.clone()
+            lbx, lby, rux, ruy = _unpack(func.lb, func.ru)
+            print(f"→ [Epoch {epoch:4d}] Domain now [{lbx:.2f},{rux:.2f}]×[{lby:.2f},{ruy:.2f}]")
 
-        # re‐build features if domain changed or if graph_modify depends on domain
+        # rebuild node features (so graph.x can depend on domain if your func.graph_modify does)
         graph = func.graph_modify(graph)
 
-        # forward + residual
-        raw = model(graph)
+        # forward + PDE residuals
+        raw     = model(graph)
         PV, PT, grad_V = func.pde_residuals(graph, raw)
 
         # interior + Neumann losses
@@ -169,8 +171,9 @@ def modelTrainer(config):
         if epoch % 500 == 0:
             print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
 
-    model.save_model(opt)
-    print(f"model saved at loss: {loss:.4e}\nTraining completed!")
+    model.save_model(config.optimizer)
+    print('model saved at loss: %.4e' % loss.item())
+    print("Training completed!")
 
 @torch.no_grad()
 def modelTester(config):
