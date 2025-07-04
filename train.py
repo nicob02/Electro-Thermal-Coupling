@@ -79,7 +79,8 @@ setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
 setattr(train_config, 'epchoes', 4000)
 # **when** to switch domain:
-setattr(train_config, 'change_domain_epoch', 2000)
+setattr(train_config, 'change_domain_epoch', 3900)
+setattr(train_config, 'domain_step', 100)
 # **to what** new domain
 setattr(train_config, 'new_lb', (-1.5, -1.5))
 setattr(train_config, 'new_ru', ( 1.5,  1.5))
