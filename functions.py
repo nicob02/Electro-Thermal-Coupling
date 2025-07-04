@@ -67,7 +67,7 @@ class CoupledElectroThermalFunc:
         # constant background
         Gt = torch.full_like(y, self.T_D)
         # vanishes on any boundary face
-        Dt = (1 - ξ**2)*(1 - η**2) * ((rx-lx)/2)*((ry-ly)/2)
+        Dt = (1 - ξ**2)*(1 - η**2) * ((ru_x-lb_x)/2)*((ru_y-lb_y)/2)
         return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
