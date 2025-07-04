@@ -133,8 +133,8 @@ def modelTrainer(config):
 
         # 2) rebuild boundary mask each epoch (since pos changed)
         x_coord = graph.pos[:, 0:1]
-        lb_x, lb_y = func.lb
-        ru_x, ru_y = func.ru
+        lb_x, lb_y = func.lb[0]    
+        ru_x, ru_y = func.ru[0]
 
         is_left   = torch.isclose(x_coord, lb_x, atol=tol)
         is_right  = torch.isclose(x_coord, ru_x, atol=tol)
