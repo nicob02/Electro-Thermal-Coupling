@@ -27,47 +27,33 @@ class CoupledElectroThermalFunc:
         graph.x = torch.cat([pos, self.sigma, self.k], dim=-1)
         return graph
 
-    def _ansatz_V(self, graph, Vraw):
-        """
-        Hard‐enforce V=0 on y=-0.5, V=1 on y=+0.5; Neumann on x=±0.5 is natural.
-        G_V(x,y)   = y + 0.5
-        D_V(x,y)   = 0.5^2 − y^2
-        û_V = G_V + D_V * Vraw
-        """
-        x = graph.pos[:,0:1]
-        y = graph.pos[:,1:2]
+      def _ansatz_V(self, graph, Vraw):
+        x = graph.pos[:,0:1]; y = graph.pos[:,1:2]
+        # flatten lb/ru into length-2
+        lb = self.lb.view(-1)
+        ru = self.ru.view(-1)
+        lb_x, lb_y = float(lb[0]), float(lb[1])
+        ru_x, ru_y = float(ru[0]), float(ru[1])
 
-        #Gv = y + 0.5                  # at y=+0.5 → 1.0, at y=-0.5 → 0.0
-        #Dv = 0.5**2 - y**2            # zero on the top/bottom, >0 interior
-        
-        lb_x, lb_y = self.lb[0,0], self.lb[0,1]
-        ru_x, ru_y = self.ru[0,0], self.ru[0,1]
-        η = (y - lb_y)/(ru_y - lb_y) 
-        # linear “background” from bottom→top
-        Gv = η 
-        # vanishes at y=lb_y or y=ru_y
-        Dv = (y - lb_y)**2 * (η*(1-η))
+        # normalize y into [0,1]
+        η = (y - lb_y) / (ru_y - lb_y)
+        Gv = η                        # → 0 at bottom, 1 at top
+        Dv = (ru_y - lb_y)**2 * η*(1-η)  # vanishes at y=lb_y or ru_y
         return Gv + Dv * Vraw
 
-
     def _ansatz_T(self, graph, Traw):
-        """
-        Hard‐enforce T=T_D on all boundaries via
-        G_T(x,y)   = T_D
-        D_T(x,y)   = (x^2 − 0.5^2)*(y^2 − 0.5^2)
-        û_T = G_T + D_T * Traw
-        """
-        x = graph.pos[:,0:1]
-        y = graph.pos[:,1:2]
+        x = graph.pos[:,0:1]; y = graph.pos[:,1:2]
+        lb = self.lb.view(-1)
+        ru = self.ru.view(-1)
+        lb_x, lb_y = float(lb[0]), float(lb[1])
+        ru_x, ru_y = float(ru[0]), float(ru[1])
 
-        lb_x, lb_y = self.lb[0,0], self.lb[0,1]
-        ru_x, ru_y = self.ru[0,0], self.ru[0,1]
-        ξ = 2*(x - lb_x)/(ru_x-lb_x) - 1
-        η = 2*(y - lb_y)/(ru_y-lb_y) - 1
-        # constant background
+        # shift into [-1,1] for x and y
+        ξ = 2*(x - lb_x)/(ru_x - lb_x) - 1
+        η = 2*(y - lb_y)/(ru_y - lb_y) - 1
         Gt = torch.full_like(y, self.T_D)
-        # vanishes on any boundary face
-        Dt = (1 - ξ**2)*(1 - η**2) * ((ru_x-lb_x)/2)*((ru_y-lb_y)/2)
+        # vanishes at any of the four edges
+        Dt = ((ru_x-lb_x)/2)*((ru_y-lb_y)/2) * (1 - ξ**2)*(1 - η**2)
         return Gt + Dt * Traw
 
     def _gradient(self, u, graph):
