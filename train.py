@@ -81,8 +81,8 @@ setattr(train_config, 'epchoes', 4000)
 # **when** to switch domain:
 setattr(train_config, 'change_domain_epoch', 2000)
 # **to what** new domain
-setattr(train_config, 'new_lb', (-1.0, -1.0))
-setattr(train_config, 'new_ru', ( 1.0,  1.0))
+setattr(train_config, 'new_lb', (-1.5, -1.5))
+setattr(train_config, 'new_ru', ( 1.5,  1.5))
 
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
