@@ -77,13 +77,13 @@ setattr(train_config, 'graph_modify', func_main.graph_modify)
 setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
-setattr(train_config, 'epchoes', 5100)
+setattr(train_config, 'epchoes', 5020)
 # **when** to switch domain:
 setattr(train_config, 'change_domain_epoch', 5000)
-setattr(train_config, 'domain_step', 500)
+setattr(train_config, 'domain_step', 1000)
 # **to what** new domain
-setattr(train_config, 'new_lb', (-1.5, -1.5))
-setattr(train_config, 'new_ru', ( 1.5,  1.5))
+setattr(train_config, 'new_lb', (-1.0, -1.0)
+setattr(train_config, 'new_ru', ( 1.0,  1.0))
 
 setattr(train_config, 'NodeTypesRef', ElectrodeMesh.node_type_ref) 
 setattr(train_config, 'step_times', 1)
