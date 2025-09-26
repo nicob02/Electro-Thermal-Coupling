@@ -168,7 +168,7 @@ def modelTrainer(config):
         opt.step()
         scheduler.step()
 
-        if epoch % 500 == 0:
+        if epoch % 200 == 0:
             print(f"[Epoch {epoch:4d}] Loss = {loss.item():.3e}")
 
     model.save_model(config.optimizer)
@@ -263,3 +263,4 @@ def render_results(V_pred, T_pred, V_exact, T_exact, graph,
     plt.tight_layout()
     plt.savefig(filename, dpi=300)
     plt.close(fig)
+
