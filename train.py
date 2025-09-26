@@ -77,7 +77,7 @@ setattr(train_config, 'graph_modify', func_main.graph_modify)
 setattr(train_config, 'graph', graph)
 setattr(train_config, 'model', model)
 setattr(train_config, 'optimizer', optimizer)
-setattr(train_config, 'epchoes', 5500)
+setattr(train_config, 'epchoes', 10)
 # **when** to switch domain:
 setattr(train_config, 'change_domain_epoch', 5450)
 setattr(train_config, 'domain_step', 1000)
@@ -93,6 +93,7 @@ setattr(train_config, 'writer', writer)
 setattr(train_config, 'func_main', func_main)
 
 modelTrainer(train_config)
+
 
 
 
