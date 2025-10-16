@@ -43,7 +43,7 @@ def parse_config(file='config.json'):
             configs[k] = config
     return configs[k]
 
-'''
+
 def modelTrainer(config):
     
     model = config.model
@@ -58,7 +58,7 @@ def modelTrainer(config):
     is_left  = torch.isclose(x_coord, torch.zeros_like(x_coord), atol=tol)
     is_right = torch.isclose(x_coord, torch.ones_like(x_coord),  atol=tol)
     lateral_mask = (is_left | is_right).squeeze()   
-    ramp_steps = config.change_sigma_epoch 
+    ramp_steps = config.change_domain_epoch
     lr_drop_epoch = ramp_steps + 1
     lr_drop_factor = 0.1
     # 1) Build static node features once
@@ -70,7 +70,6 @@ def modelTrainer(config):
         sigma_val = 1.0 + 3.0 * (t / ramp_steps)
         func.sigma = torch.ones(graph.num_nodes,1,
                                 device=graph.pos.device) * sigma_val
-         rebuild node features so graph.x picks up new σ
  
         graph = func.graph_modify(graph)
             
@@ -174,7 +173,7 @@ def modelTrainer(config):
     model.save_model(config.optimizer)
     print('model saved at loss: %.4e' % loss.item())
     print("Training completed!")
-
+'''
 @torch.no_grad()
 def modelTester(config):
     """
@@ -263,6 +262,7 @@ def render_results(V_pred, T_pred, V_exact, T_exact, graph,
     plt.tight_layout()
     plt.savefig(filename, dpi=300)
     plt.close(fig)
+
 
 
 
